@@ -8,7 +8,7 @@ import heroImage from "@/assets/medical-hero.jpg";
 
 const Hero = () => {
   const navigate = useNavigate();
-  const [location, setLocation] = useState("");
+  const [location, setLocation] = useState("lusaka");
   const [specialty, setSpecialty] = useState("");
 
   const handleSearch = () => {
