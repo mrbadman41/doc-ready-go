@@ -9,12 +9,14 @@ import heroImage from "@/assets/medical-hero.jpg";
 const Hero = () => {
   const navigate = useNavigate();
   const [location, setLocation] = useState("lusaka");
+  const [zipCode, setZipCode] = useState("");
   const [specialty, setSpecialty] = useState("");
 
   const handleSearch = () => {
     if (location || specialty) {
       const params = new URLSearchParams();
       if (location) params.set('location', location);
+      if (zipCode) params.set('zipCode', zipCode);
       if (specialty) params.set('q', specialty);
       navigate(`/search?${params.toString()}`);
     } else {
@@ -49,8 +51,8 @@ const Hero = () => {
         </div>
 
         {/* Search Card */}
-        <Card className="p-8 bg-white/95 backdrop-blur-sm shadow-2xl max-w-4xl mx-auto">
-          <div className="grid md:grid-cols-3 gap-4 mb-6">
+        <Card className="p-8 bg-white/95 backdrop-blur-sm shadow-2xl max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-4 mb-6">
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
               <Input
@@ -58,6 +60,15 @@ const Hero = () => {
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 className="pl-10 h-12 text-base"
+              />
+            </div>
+            <div className="relative">
+              <Input
+                placeholder="ZIP Code"
+                value={zipCode}
+                onChange={(e) => setZipCode(e.target.value)}
+                className="h-12 text-base"
+                maxLength={5}
               />
             </div>
             <div className="relative">

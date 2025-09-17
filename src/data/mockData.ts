@@ -12,6 +12,7 @@ export interface Hospital {
   id: string;
   name: string;
   address: string;
+  zipCode: string;
   distance: string;
   rating: number;
   phone: string;
@@ -27,6 +28,7 @@ export const mockHospitals: Hospital[] = [
     id: "1",
     name: "City Medical Center",
     address: "123 Main Street, Downtown",
+    zipCode: "10101",
     distance: "0.8 km",
     rating: 4.8,
     phone: "+1 (555) 123-4567",
@@ -73,6 +75,7 @@ export const mockHospitals: Hospital[] = [
     id: "2",
     name: "General Hospital",
     address: "456 Oak Avenue, Midtown",
+    zipCode: "10102",
     distance: "1.2 km",
     rating: 4.6,
     phone: "+1 (555) 234-5678",
@@ -111,6 +114,7 @@ export const mockHospitals: Hospital[] = [
     id: "3",
     name: "St. Mary's Hospital",
     address: "789 Pine Street, Northside",
+    zipCode: "10103",
     distance: "2.1 km",
     rating: 4.7,
     phone: "+1 (555) 345-6789",
@@ -149,6 +153,7 @@ export const mockHospitals: Hospital[] = [
     id: "4",
     name: "Community Health Clinic",
     address: "321 Elm Street, Southside",
+    zipCode: "10104",
     distance: "3.5 km",
     rating: 4.4,
     phone: "+1 (555) 456-7890",
