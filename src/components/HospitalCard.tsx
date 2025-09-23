@@ -15,7 +15,6 @@ interface HospitalCardProps {
   id: string;
   name: string;
   address: string;
-  zipCode: string;
   distance: string;
   rating: number;
   phone: string;
@@ -25,9 +24,8 @@ interface HospitalCardProps {
 
 const HospitalCard = ({ 
   name, 
-  address,
-  zipCode,
-  distance, 
+  address, 
+  distance,
   rating, 
   phone, 
   doctors,
@@ -43,7 +41,7 @@ const HospitalCard = ({
             <CardTitle className="text-xl font-bold text-foreground mb-2">{name}</CardTitle>
             <div className="flex items-center text-muted-foreground mb-2">
               <MapPin className="h-4 w-4 mr-1" />
-              <span className="text-sm">{address}, {zipCode}</span>
+              <span className="text-sm">{address}</span>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center">
