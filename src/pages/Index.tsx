@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import HospitalCard from "@/components/HospitalCard";
-import Map from "@/components/Map";
 import { mockHospitals } from "@/data/mockData";
 import { Search, Clock, Calendar, Users } from "lucide-react";
 
@@ -60,19 +59,6 @@ const Index = () => {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Map Section */}
-      <section className="py-20 px-4 bg-secondary/30">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-4">
-            Find Healthcare in Zambia
-          </h2>
-          <p className="text-center text-muted-foreground mb-12">
-            Locate hospitals and clinics across Zambia
-          </p>
-          <Map />
         </div>
       </section>
 
