@@ -38,9 +38,8 @@ const Hero = () => {
       <div className="relative z-10 max-w-6xl mx-auto px-4 text-center text-white">
         <div className="mb-8">
           <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-            Find & Book
-            <span className="block text-medical-blue-dark">Healthcare</span>
-            <span className="block">Instantly</span>
+            Doctor checkIns
+            <span className="block text-medical-blue-dark">& Appointments</span>
           </h1>
           <p className="text-xl md:text-2xl opacity-90 max-w-3xl mx-auto leading-relaxed">
             Check real-time availability of doctors and nurses at nearby hospitals. 
