@@ -29,7 +29,11 @@ const Navigation = () => {
               <Calendar className="h-5 w-5" />
               <span className="hidden sm:inline">My Appointments</span>
             </Button>
-            <Button variant="ghost" className="gap-2">
+            <Button 
+              variant="ghost" 
+              className="gap-2"
+              onClick={() => navigate('/profile')}
+            >
               <User className="h-5 w-5" />
               <span className="hidden sm:inline">Profile</span>
             </Button>
