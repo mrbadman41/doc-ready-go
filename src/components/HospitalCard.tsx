@@ -1,6 +1,6 @@
-import { MapPin, Clock, Star, Phone } from "lucide-react";
+import { MapPin, Star, Phone, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 interface Doctor {
@@ -31,82 +31,77 @@ const HospitalCard = ({
   doctors,
   image 
 }: HospitalCardProps) => {
-  const availableDoctors = doctors.filter(d => d.availability === "available").length;
+  // Get unique specialties from doctors
+  const specialties = [...new Set(doctors.map(d => d.specialty))];
   
   return (
-    <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-      <CardHeader className="pb-4">
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-xl font-bold text-foreground mb-2">{name}</CardTitle>
-            <div className="flex items-center text-muted-foreground mb-2">
-              <MapPin className="h-4 w-4 mr-1" />
-              <span className="text-sm">{address}</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center">
-                <Star className="h-4 w-4 text-yellow-500 mr-1" />
-                <span className="text-sm font-medium">{rating}</span>
-              </div>
-              <span className="text-sm text-muted-foreground">{distance}</span>
-            </div>
-          </div>
-          <Badge 
-            variant={availableDoctors > 0 ? "default" : "secondary"}
-            className={`${
-              availableDoctors > 0 
-                ? "bg-success text-success-foreground" 
-                : "bg-muted text-muted-foreground"
-            }`}
-          >
-            {availableDoctors > 0 ? `${availableDoctors} Available` : "No availability"}
-          </Badge>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="pt-0">
-        {/* Doctor List */}
-        <div className="space-y-3 mb-6">
-          {doctors.slice(0, 3).map((doctor) => (
-            <div key={doctor.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div>
-                <div className="font-medium text-sm">{doctor.name}</div>
-                <div className="text-xs text-muted-foreground">{doctor.specialty}</div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${
-                  doctor.availability === "available" ? "bg-success" :
-                  doctor.availability === "busy" ? "bg-warning" : "bg-muted-foreground"
-                }`} />
-                <span className="text-xs font-medium">
-                  {doctor.availability === "available" ? "Available" :
-                   doctor.availability === "busy" ? doctor.nextSlot || "Busy" : "Offline"}
-                </span>
-              </div>
-            </div>
-          ))}
-          {doctors.length > 3 && (
-            <div className="text-center text-sm text-muted-foreground">
-              +{doctors.length - 3} more doctors
+    <Card className="p-6 hover:shadow-lg transition-shadow">
+      <div className="flex gap-4">
+        {/* Hospital Image */}
+        <div className="w-24 h-24 flex-shrink-0 bg-muted rounded-lg overflow-hidden">
+          {image ? (
+            <img src={image} alt={name} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+              🏥
             </div>
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2">
-          <Button 
-            className="flex-1" 
-            disabled={availableDoctors === 0}
-            variant={availableDoctors > 0 ? "default" : "secondary"}
-          >
-            <Clock className="mr-2 h-4 w-4" />
-            Book Now
-          </Button>
-          <Button variant="outline" size="icon">
-            <Phone className="h-4 w-4" />
-          </Button>
+        {/* Hospital Details */}
+        <div className="flex-1 min-w-0">
+          <h3 className="text-xl font-bold mb-2">{name}</h3>
+          
+          {/* Meta Info */}
+          <div className="flex items-center gap-4 mb-2 text-sm">
+            <div className="flex items-center gap-1">
+              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+              <span className="font-medium">{rating}</span>
+            </div>
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <MapPin className="h-4 w-4" />
+              <span>{distance} from city center</span>
+            </div>
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Users className="h-4 w-4" />
+              <span>{doctors.length} doctors</span>
+            </div>
+          </div>
+
+          {/* Address */}
+          <div className="flex items-start gap-1 mb-4 text-sm text-muted-foreground">
+            <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <span>{address}</span>
+          </div>
+
+          {/* Specialties */}
+          <div className="mb-4">
+            <h4 className="text-sm font-semibold mb-2">Specialties:</h4>
+            <div className="flex flex-wrap gap-2">
+              {specialties.map((specialty) => (
+                <Badge 
+                  key={specialty} 
+                  variant="secondary"
+                  className="bg-muted hover:bg-muted"
+                >
+                  {specialty}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Phone className="h-4 w-4" />
+              <span>{phone}</span>
+            </div>
+            <Button className="bg-primary hover:bg-primary/90">
+              View Doctors
+            </Button>
+          </div>
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 };
