@@ -40,7 +40,7 @@ const Profile = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold">My Profile</h1>
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => navigate("/profile/edit")}>
             <Edit className="h-4 w-4" />
             Edit Profile
           </Button>
