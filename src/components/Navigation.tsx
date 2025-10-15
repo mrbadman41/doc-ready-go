@@ -1,9 +1,18 @@
-import { Bell, Calendar, User } from "lucide-react";
+import { Bell, Calendar, User, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 const Navigation = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    toast.success('Logged out successfully');
+    navigate('/login');
+  };
   
   return (
     <nav className="bg-white border-b border-border sticky top-0 z-50">
@@ -40,6 +49,14 @@ const Navigation = () => {
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full"></span>
+            </Button>
+            <Button 
+              variant="ghost" 
+              className="gap-2"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-5 w-5" />
+              <span className="hidden sm:inline">Logout</span>
             </Button>
           </div>
         </div>
