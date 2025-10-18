@@ -66,19 +66,15 @@ const AdminDashboard = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Hospital Management</CardTitle>
-              <CardDescription>Configure hospitals and services</CardDescription>
+              <CardTitle>System Configuration</CardTitle>
+              <CardDescription>Configure system and appointment settings</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button className="w-full justify-start" variant="outline">
-                <Building2 className="mr-2 h-4 w-4" />
-                View All Hospitals
-              </Button>
-              <Button className="w-full justify-start" variant="outline">
+              <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/admin/settings')}>
                 <Settings className="mr-2 h-4 w-4" />
                 System Settings
               </Button>
-              <Button className="w-full justify-start" variant="outline">
+              <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/admin/appointments')}>
                 <Calendar className="mr-2 h-4 w-4" />
                 Appointment Settings
               </Button>

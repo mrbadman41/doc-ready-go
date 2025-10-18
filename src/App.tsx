@@ -15,6 +15,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminDoctors from "./pages/AdminDoctors";
 import AdminPatients from "./pages/AdminPatients";
+import AdminSystemSettings from "./pages/AdminSystemSettings";
+import AdminAppointmentSettings from "./pages/AdminAppointmentSettings";
 import Search from "./pages/Search";
 import Appointments from "./pages/Appointments";
 import Profile from "./pages/Profile";
@@ -101,6 +103,16 @@ const App = () => (
             <Route path="/admin/patients" element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <AdminPatients />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/settings" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminSystemSettings />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/appointments" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminAppointmentSettings />
               </ProtectedRoute>
             } />
             
