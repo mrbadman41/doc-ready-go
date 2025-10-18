@@ -3,9 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Calendar, Users, Clock, Activity } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const DoctorDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const stats = [
     { title: 'Today\'s Appointments', value: '12', icon: Calendar, color: 'text-blue-600' },
@@ -69,15 +71,15 @@ const DoctorDashboard = () => {
               <CardDescription>Common tasks and shortcuts</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button className="w-full justify-start" variant="outline">
+              <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/doctor/schedule')}>
                 <Calendar className="mr-2 h-4 w-4" />
                 View Full Schedule
               </Button>
-              <Button className="w-full justify-start" variant="outline">
+              <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/doctor/patients')}>
                 <Users className="mr-2 h-4 w-4" />
                 Patient Records
               </Button>
-              <Button className="w-full justify-start" variant="outline">
+              <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/doctor/prescriptions')}>
                 <Clock className="mr-2 h-4 w-4" />
                 Prescription History
               </Button>

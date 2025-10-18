@@ -8,6 +8,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import PatientDashboard from "./pages/PatientDashboard";
 import DoctorDashboard from "./pages/DoctorDashboard";
+import DoctorSchedule from "./pages/DoctorSchedule";
+import PatientRecords from "./pages/PatientRecords";
+import PrescriptionHistory from "./pages/PrescriptionHistory";
 import AdminDashboard from "./pages/AdminDashboard";
 import Search from "./pages/Search";
 import Appointments from "./pages/Appointments";
@@ -58,6 +61,21 @@ const App = () => (
             <Route path="/doctor/dashboard" element={
               <ProtectedRoute allowedRoles={['doctor']}>
                 <DoctorDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/doctor/schedule" element={
+              <ProtectedRoute allowedRoles={['doctor']}>
+                <DoctorSchedule />
+              </ProtectedRoute>
+            } />
+            <Route path="/doctor/patients" element={
+              <ProtectedRoute allowedRoles={['doctor']}>
+                <PatientRecords />
+              </ProtectedRoute>
+            } />
+            <Route path="/doctor/prescriptions" element={
+              <ProtectedRoute allowedRoles={['doctor']}>
+                <PrescriptionHistory />
               </ProtectedRoute>
             } />
             
