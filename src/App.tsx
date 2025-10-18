@@ -12,6 +12,9 @@ import DoctorSchedule from "./pages/DoctorSchedule";
 import PatientRecords from "./pages/PatientRecords";
 import PrescriptionHistory from "./pages/PrescriptionHistory";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminUsers from "./pages/AdminUsers";
+import AdminDoctors from "./pages/AdminDoctors";
+import AdminPatients from "./pages/AdminPatients";
 import Search from "./pages/Search";
 import Appointments from "./pages/Appointments";
 import Profile from "./pages/Profile";
@@ -83,6 +86,21 @@ const App = () => (
             <Route path="/admin/dashboard" element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <AdminDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/users" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminUsers />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/doctors" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminDoctors />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/patients" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminPatients />
               </ProtectedRoute>
             } />
             

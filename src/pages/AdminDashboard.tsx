@@ -3,9 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Users, Building2, Calendar, Settings } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const stats = [
     { title: 'Total Users', value: '1,234', icon: Users, color: 'text-blue-600' },
@@ -47,15 +49,15 @@ const AdminDashboard = () => {
               <CardDescription>Manage system users and roles</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button className="w-full justify-start" variant="outline">
+              <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/admin/users')}>
                 <Users className="mr-2 h-4 w-4" />
                 View All Users
               </Button>
-              <Button className="w-full justify-start" variant="outline">
+              <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/admin/doctors')}>
                 <Users className="mr-2 h-4 w-4" />
                 Manage Doctors
               </Button>
-              <Button className="w-full justify-start" variant="outline">
+              <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/admin/patients')}>
                 <Users className="mr-2 h-4 w-4" />
                 Manage Patients
               </Button>
