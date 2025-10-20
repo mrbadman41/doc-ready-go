@@ -5,8 +5,10 @@ import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Clock, MapPin, User } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const DoctorSchedule = () => {
+  const navigate = useNavigate();
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   const appointments = [
@@ -73,7 +75,7 @@ const DoctorSchedule = () => {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline">Details</Button>
+                      <Button size="sm" variant="outline" onClick={() => navigate(`/doctor/appointment/${appointment.id}`)}>Details</Button>
                       <Button size="sm">Start</Button>
                     </div>
                   </div>

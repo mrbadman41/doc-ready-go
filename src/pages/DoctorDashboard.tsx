@@ -58,7 +58,7 @@ const DoctorDashboard = () => {
                         {i === 1 ? '09:00 AM' : i === 2 ? '10:30 AM' : '02:00 PM'}
                       </p>
                     </div>
-                    <Button size="sm">View Details</Button>
+                    <Button size="sm" onClick={() => navigate(`/doctor/appointment/${i}`)}>View Details</Button>
                   </div>
                 ))}
               </div>
