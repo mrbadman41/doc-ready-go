@@ -12,8 +12,8 @@ const Profile = () => {
   const user = {
     name: "John Doe",
     email: "john.doe@email.com",
-    phone: "+1 (555) 123-4567",
-    location: "New York, NY",
+    phone: "+260 97 123 4567",
+    location: "Lusaka, Zambia",
     memberSince: "January 2024",
     avatar: "",
   };
@@ -28,7 +28,7 @@ const Profile = () => {
   const medicalInfo = {
     bloodType: "O+",
     allergies: "Penicillin",
-    emergencyContact: "Jane Doe - (555) 987-6543",
+    emergencyContact: "Jane Doe - +260 96 987 6543",
     insurance: "HealthCare Plus",
   };
 

@@ -16,9 +16,9 @@ const AppointmentDetails = () => {
     patient: {
       name: 'John Smith',
       age: 45,
-      phone: '+1 (555) 123-4567',
+      phone: '+260 97 123 4567',
       email: 'john.smith@email.com',
-      address: '123 Main St, New York, NY 10001',
+      address: 'Plot 123, Cairo Road, Lusaka, Zambia',
     },
     date: 'March 15, 2024',
     time: '09:00 AM',
