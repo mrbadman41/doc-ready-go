@@ -22,6 +22,7 @@ import Search from "./pages/Search";
 import Appointments from "./pages/Appointments";
 import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
+import HospitalDoctors from "./pages/HospitalDoctors";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,11 @@ const App = () => (
             <Route path="/search" element={
               <ProtectedRoute allowedRoles={['patient']}>
                 <Search />
+              </ProtectedRoute>
+            } />
+            <Route path="/hospital/:hospitalId/doctors" element={
+              <ProtectedRoute allowedRoles={['patient']}>
+                <HospitalDoctors />
               </ProtectedRoute>
             } />
             <Route path="/appointments" element={

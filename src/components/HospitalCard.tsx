@@ -1,4 +1,5 @@
 import { MapPin, Star, Phone, Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,7 @@ interface HospitalCardProps {
 }
 
 const HospitalCard = ({ 
+  id,
   name, 
   address, 
   distance,
@@ -31,6 +33,8 @@ const HospitalCard = ({
   doctors,
   image 
 }: HospitalCardProps) => {
+  const navigate = useNavigate();
+  
   // Get unique specialties from doctors
   const specialties = [...new Set(doctors.map(d => d.specialty))];
   
@@ -96,7 +100,10 @@ const HospitalCard = ({
               <Phone className="h-4 w-4" />
               <span>{phone}</span>
             </div>
-            <Button className="bg-primary hover:bg-primary/90">
+            <Button 
+              onClick={() => navigate(`/hospital/${id}/doctors`)}
+              className="bg-primary hover:bg-primary/90"
+            >
               View Doctors
             </Button>
           </div>
