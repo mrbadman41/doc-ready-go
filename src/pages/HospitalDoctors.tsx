@@ -8,18 +8,26 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { mockHospitals } from "@/data/mockData";
 import { MapPin, Phone, Star, Calendar, Clock, ArrowLeft, Building2 } from "lucide-react";
 import { BookAppointmentModal } from "@/components/BookAppointmentModal";
+import { DoctorProfileModal } from "@/components/DoctorProfileModal";
 
 const HospitalDoctors = () => {
   const { hospitalId } = useParams();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [selectedDoctorForProfile, setSelectedDoctorForProfile] = useState<any>(null);
   
   const hospital = mockHospitals.find(h => h.id === hospitalId);
 
   const handleBookAppointment = (doctorId: string) => {
     setSelectedDoctor(doctorId);
     setIsModalOpen(true);
+  };
+
+  const handleViewProfile = (doctor: any) => {
+    setSelectedDoctorForProfile(doctor);
+    setIsProfileModalOpen(true);
   };
 
   if (!hospital) {
@@ -176,7 +184,7 @@ const HospitalDoctors = () => {
                           <Calendar className="mr-2 h-4 w-4" />
                           Book Appointment
                         </Button>
-                        <Button variant="outline">
+                        <Button variant="outline" onClick={() => handleViewProfile(doctor)}>
                           View Profile
                         </Button>
                       </div>
@@ -194,6 +202,12 @@ const HospitalDoctors = () => {
         onOpenChange={setIsModalOpen}
         preSelectedHospital={hospitalId}
         preSelectedDoctor={selectedDoctor || undefined}
+      />
+
+      <DoctorProfileModal
+        open={isProfileModalOpen}
+        onOpenChange={setIsProfileModalOpen}
+        doctor={selectedDoctorForProfile}
       />
     </div>
   );
