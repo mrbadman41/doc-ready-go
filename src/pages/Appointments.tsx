@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { ArrowLeft, Calendar, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
+import { BookAppointmentModal } from "@/components/BookAppointmentModal";
 
 const Appointments = () => {
   const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
@@ -25,7 +28,7 @@ const Appointments = () => {
           </div>
           
           <Button 
-            onClick={() => navigate('/search')}
+            onClick={() => setIsModalOpen(true)}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             Book New Appointment
@@ -47,12 +50,14 @@ const Appointments = () => {
           </p>
           
           <Button 
-            onClick={() => navigate('/search')}
+            onClick={() => setIsModalOpen(true)}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             Find Hospitals
           </Button>
         </div>
+
+        <BookAppointmentModal open={isModalOpen} onOpenChange={setIsModalOpen} />
 
         {/* Information Box */}
         <div className="mt-20 border border-primary/30 bg-primary/5 rounded-lg p-6">
