@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
@@ -6,12 +7,20 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { mockHospitals } from "@/data/mockData";
 import { MapPin, Phone, Star, Calendar, Clock, ArrowLeft, Building2 } from "lucide-react";
+import { BookAppointmentModal } from "@/components/BookAppointmentModal";
 
 const HospitalDoctors = () => {
   const { hospitalId } = useParams();
   const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
   
   const hospital = mockHospitals.find(h => h.id === hospitalId);
+
+  const handleBookAppointment = (doctorId: string) => {
+    setSelectedDoctor(doctorId);
+    setIsModalOpen(true);
+  };
 
   if (!hospital) {
     return (
@@ -161,7 +170,7 @@ const HospitalDoctors = () => {
 
                       <div className="flex gap-3">
                         <Button 
-                          onClick={() => navigate('/appointments')}
+                          onClick={() => handleBookAppointment(doctor.id)}
                           disabled={doctor.availability === 'offline'}
                         >
                           <Calendar className="mr-2 h-4 w-4" />
@@ -179,6 +188,13 @@ const HospitalDoctors = () => {
           </div>
         </div>
       </div>
+
+      <BookAppointmentModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        preSelectedHospital={hospitalId}
+        preSelectedDoctor={selectedDoctor || undefined}
+      />
     </div>
   );
 };

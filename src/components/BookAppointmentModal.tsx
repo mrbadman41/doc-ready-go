@@ -51,6 +51,8 @@ const formSchema = z.object({
 interface BookAppointmentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  preSelectedHospital?: string;
+  preSelectedDoctor?: string;
 }
 
 const timeSlots = [
@@ -59,14 +61,14 @@ const timeSlots = [
   "04:00 PM", "05:00 PM",
 ];
 
-export const BookAppointmentModal = ({ open, onOpenChange }: BookAppointmentModalProps) => {
-  const [selectedHospital, setSelectedHospital] = useState<string>("");
+export const BookAppointmentModal = ({ open, onOpenChange, preSelectedHospital, preSelectedDoctor }: BookAppointmentModalProps) => {
+  const [selectedHospital, setSelectedHospital] = useState<string>(preSelectedHospital || "");
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      hospitalId: "",
-      doctorId: "",
+      hospitalId: preSelectedHospital || "",
+      doctorId: preSelectedDoctor || "",
       time: "",
       reason: "",
     },
