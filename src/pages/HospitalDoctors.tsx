@@ -1,14 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { mockHospitals } from "@/data/mockData";
 import { MapPin, Phone, Star, Calendar, Clock, ArrowLeft, Building2 } from "lucide-react";
 import { BookAppointmentModal } from "@/components/BookAppointmentModal";
 import { DoctorProfileModal } from "@/components/DoctorProfileModal";
+import { supabase } from "@/integrations/supabase/client";
 
 const HospitalDoctors = () => {
   const { hospitalId } = useParams();
@@ -17,8 +17,34 @@ const HospitalDoctors = () => {
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedDoctorForProfile, setSelectedDoctorForProfile] = useState<any>(null);
-  
-  const hospital = mockHospitals.find(h => h.id === hospitalId);
+  const [hospital, setHospital] = useState<any>(null);
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!hospitalId) return;
+
+      // Fetch hospital
+      const { data: hospitalData } = await supabase
+        .from('hospitals')
+        .select('*')
+        .eq('id', hospitalId)
+        .single();
+
+      // Fetch doctors for this hospital
+      const { data: doctorsData } = await supabase
+        .from('doctors')
+        .select('*, profiles!doctors_user_id_fkey(name)')
+        .eq('hospital_id', hospitalId);
+
+      setHospital(hospitalData);
+      setDoctors(doctorsData || []);
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [hospitalId]);
 
   const handleBookAppointment = (doctorId: string) => {
     setSelectedDoctor(doctorId);
@@ -29,6 +55,17 @@ const HospitalDoctors = () => {
     setSelectedDoctorForProfile(doctor);
     setIsProfileModalOpen(true);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <Navigation />
+        <div className="max-w-7xl mx-auto px-4 py-12">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!hospital) {
     return (
@@ -110,11 +147,11 @@ const HospitalDoctors = () => {
                   
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Building2 className="h-4 w-4" />
-                    <span>{hospital.availableBeds} of {hospital.totalBeds} beds available</span>
+                    <span>{hospital.beds || 0} beds</span>
                   </div>
                 </div>
 
-                {hospital.emergencyServices && (
+                {hospital.emergency_services && (
                   <Badge className="mt-4 bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20">
                     24/7 Emergency Services
                   </Badge>
@@ -126,74 +163,71 @@ const HospitalDoctors = () => {
 
         {/* Doctors List */}
         <div className="mb-6">
-          <h2 className="text-2xl font-bold mb-6">Our Doctors ({hospital.doctors.length})</h2>
+          <h2 className="text-2xl font-bold mb-6">Our Doctors ({doctors.length})</h2>
           
-          <div className="grid gap-6">
-            {hospital.doctors.map((doctor) => (
-              <Card key={doctor.id} className="hover:shadow-lg transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-6">
-                    {/* Doctor Avatar */}
-                    <Avatar className="h-20 w-20">
-                      <AvatarFallback className="text-lg font-semibold bg-primary/10 text-primary">
-                        {getInitials(doctor.name)}
-                      </AvatarFallback>
-                    </Avatar>
+          {doctors.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">No doctors found for this hospital</p>
+          ) : (
+            <div className="grid gap-6">
+              {doctors.map((doctor) => (
+                <Card key={doctor.id} className="hover:shadow-lg transition-shadow">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-6">
+                      {/* Doctor Avatar */}
+                      <Avatar className="h-20 w-20">
+                        <AvatarFallback className="text-lg font-semibold bg-primary/10 text-primary">
+                          {getInitials(doctor.profiles?.name || 'Doctor')}
+                        </AvatarFallback>
+                      </Avatar>
 
-                    {/* Doctor Info */}
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h3 className="text-xl font-bold mb-1">{doctor.name}</h3>
-                          <p className="text-muted-foreground">{doctor.specialty}</p>
-                        </div>
-                        
-                        <Badge 
-                          variant="outline" 
-                          className={getAvailabilityColor(doctor.availability)}
-                        >
-                          {doctor.availability.charAt(0).toUpperCase() + doctor.availability.slice(1)}
-                        </Badge>
-                      </div>
-
-                      <div className="grid md:grid-cols-3 gap-4 mb-4">
-                        <div className="flex items-center gap-2">
-                          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                          <span className="font-medium">{doctor.rating}</span>
-                          <span className="text-muted-foreground text-sm">Rating</span>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                          <Clock className="h-4 w-4" />
-                          <span>{doctor.experience} years experience</span>
-                        </div>
-
-                        {doctor.nextSlot && (
-                          <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                            <Calendar className="h-4 w-4" />
-                            <span>Next: {doctor.nextSlot}</span>
+                      {/* Doctor Info */}
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h3 className="text-xl font-bold mb-1">Dr. {doctor.profiles?.name || 'Unknown'}</h3>
+                            <p className="text-muted-foreground">{doctor.specialty}</p>
                           </div>
-                        )}
-                      </div>
+                          
+                          <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
+                            Available
+                          </Badge>
+                        </div>
 
-                      <div className="flex gap-3">
-                        <Button 
-                          onClick={() => handleBookAppointment(doctor.id)}
-                          disabled={doctor.availability === 'offline'}
-                        >
-                          <Calendar className="mr-2 h-4 w-4" />
-                          Book Appointment
-                        </Button>
-                        <Button variant="outline" onClick={() => handleViewProfile(doctor)}>
-                          View Profile
-                        </Button>
+                        <div className="grid md:grid-cols-3 gap-4 mb-4">
+                          <div className="flex items-center gap-2">
+                            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                            <span className="font-medium">{doctor.rating || 5.0}</span>
+                            <span className="text-muted-foreground text-sm">Rating</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                            <Clock className="h-4 w-4" />
+                            <span>{doctor.experience || 0} years experience</span>
+                          </div>
+
+                          {doctor.consultation_fee && (
+                            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                              <span>Fee: ZMW {doctor.consultation_fee}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex gap-3">
+                          <Button onClick={() => handleBookAppointment(doctor.id)}>
+                            <Calendar className="mr-2 h-4 w-4" />
+                            Book Appointment
+                          </Button>
+                          <Button variant="outline" onClick={() => handleViewProfile(doctor)}>
+                            View Profile
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

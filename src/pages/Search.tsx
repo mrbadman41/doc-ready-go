@@ -4,29 +4,35 @@ import { Search, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import HospitalCard from "@/components/HospitalCard";
-import { mockHospitals, Hospital } from "@/data/mockData";
+import { supabase } from "@/integrations/supabase/client";
 
 const SearchPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [hospitals, setHospitals] = useState<Hospital[]>(mockHospitals);
+  const [hospitals, setHospitals] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let filteredHospitals = mockHospitals;
+    const fetchHospitals = async () => {
+      setLoading(true);
+      let query = supabase
+        .from('hospitals')
+        .select('*');
 
-    if (searchTerm) {
-      filteredHospitals = filteredHospitals.filter(hospital =>
-        hospital.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        hospital.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        hospital.doctors.some(doctor => 
-          doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          doctor.specialty.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      );
-    }
+      if (searchTerm) {
+        query = query.or(`name.ilike.%${searchTerm}%,address.ilike.%${searchTerm}%`);
+      }
 
-    setHospitals(filteredHospitals);
+      const { data, error } = await query;
+      
+      if (!error && data) {
+        setHospitals(data);
+      }
+      setLoading(false);
+    };
+
+    fetchHospitals();
   }, [searchTerm]);
 
   return (
@@ -74,10 +80,14 @@ const SearchPage = () => {
       {/* Results */}
       <div className="max-w-7xl mx-auto px-4 py-8">
         <h2 className="text-xl font-bold mb-6">
-          {hospitals.length} hospitals found
+          {loading ? 'Searching...' : `${hospitals.length} hospitals found`}
         </h2>
 
-        {hospitals.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Loading hospitals...</p>
+          </div>
+        ) : hospitals.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🏥</div>
             <h3 className="text-xl font-semibold mb-2">No hospitals found</h3>
@@ -88,7 +98,7 @@ const SearchPage = () => {
         ) : (
           <div className="grid md:grid-cols-2 gap-6">
             {hospitals.map((hospital) => (
-              <HospitalCard key={hospital.id} {...hospital} />
+              <HospitalCard key={hospital.id} {...hospital} doctors={[]} />
             ))}
           </div>
         )}

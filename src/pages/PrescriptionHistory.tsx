@@ -4,71 +4,49 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, Calendar, User, Pill, FileText } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 
 const PrescriptionHistory = () => {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const [prescriptions, setPrescriptions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const prescriptions = [
-    {
-      id: 1,
-      patient: 'John Smith',
-      date: '2024-01-15',
-      medication: 'Lisinopril 10mg',
-      dosage: 'Once daily',
-      duration: '30 days',
-      status: 'Active',
-    },
-    {
-      id: 2,
-      patient: 'Sarah Johnson',
-      date: '2024-01-14',
-      medication: 'Metformin 500mg',
-      dosage: 'Twice daily',
-      duration: '90 days',
-      status: 'Active',
-    },
-    {
-      id: 3,
-      patient: 'Michael Brown',
-      date: '2024-01-10',
-      medication: 'Ibuprofen 400mg',
-      dosage: 'As needed',
-      duration: '14 days',
-      status: 'Completed',
-    },
-    {
-      id: 4,
-      patient: 'Emily Davis',
-      date: '2024-01-08',
-      medication: 'Sumatriptan 50mg',
-      dosage: 'As needed',
-      duration: '30 days',
-      status: 'Active',
-    },
-    {
-      id: 5,
-      patient: 'David Wilson',
-      date: '2024-01-05',
-      medication: 'Naproxen 250mg',
-      dosage: 'Twice daily',
-      duration: '21 days',
-      status: 'Active',
-    },
-    {
-      id: 6,
-      patient: 'Lisa Anderson',
-      date: '2024-01-03',
-      medication: 'Sertraline 25mg',
-      dosage: 'Once daily',
-      duration: '90 days',
-      status: 'Active',
-    },
-  ];
+  useEffect(() => {
+    const fetchPrescriptions = async () => {
+      if (!user?.id) return;
+
+      // Get doctor's ID
+      const { data: doctorData } = await supabase
+        .from('doctors')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!doctorData) return;
+
+      // Fetch medical records with prescriptions for this doctor
+      const { data, error } = await supabase
+        .from('medical_records')
+        .select('*, profiles!medical_records_patient_id_fkey(name)')
+        .eq('doctor_id', doctorData.id)
+        .not('prescription', 'is', null)
+        .order('record_date', { ascending: false });
+
+      if (!error && data) {
+        setPrescriptions(data);
+      }
+      setLoading(false);
+    };
+
+    fetchPrescriptions();
+  }, [user]);
 
   const filteredPrescriptions = prescriptions.filter(prescription =>
-    prescription.patient.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    prescription.medication.toLowerCase().includes(searchQuery.toLowerCase())
+    prescription.profiles?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    prescription.prescription?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -94,59 +72,58 @@ const PrescriptionHistory = () => {
           <Button>New Prescription</Button>
         </div>
 
-        <div className="grid gap-4">
-          {filteredPrescriptions.map((prescription) => (
-            <Card key={prescription.id}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div>
-                      <CardTitle className="text-lg">{prescription.medication}</CardTitle>
-                      <CardDescription className="flex items-center gap-4 mt-1">
-                        <span className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          {prescription.patient}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {prescription.date}
-                        </span>
-                      </CardDescription>
+        {loading ? (
+          <p className="text-center py-8 text-muted-foreground">Loading prescriptions...</p>
+        ) : filteredPrescriptions.length === 0 ? (
+          <p className="text-center py-8 text-muted-foreground">No prescriptions found</p>
+        ) : (
+          <div className="grid gap-4">
+            {filteredPrescriptions.map((prescription) => (
+              <Card key={prescription.id}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div>
+                        <CardTitle className="text-lg">Prescription</CardTitle>
+                        <CardDescription className="flex items-center gap-4 mt-1">
+                          <span className="flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            {prescription.profiles?.name || 'Unknown'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {prescription.record_date}
+                          </span>
+                        </CardDescription>
+                      </div>
                     </div>
+                    <Badge variant="default">Active</Badge>
                   </div>
-                  <Badge variant={prescription.status === 'Active' ? 'default' : 'secondary'}>
-                    {prescription.status}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="flex items-start gap-2">
-                    <Pill className="h-4 w-4 text-muted-foreground mt-1" />
-                    <div>
-                      <p className="text-sm font-medium">Dosage</p>
-                      <p className="text-sm text-muted-foreground">{prescription.dosage}</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="flex items-start gap-2">
+                      <Pill className="h-4 w-4 text-muted-foreground mt-1" />
+                      <div>
+                        <p className="text-sm font-medium">Prescription</p>
+                        <p className="text-sm text-muted-foreground">{prescription.prescription}</p>
+                      </div>
                     </div>
+                    {prescription.diagnosis && (
+                      <div className="flex items-start gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground mt-1" />
+                        <div>
+                          <p className="text-sm font-medium">Diagnosis</p>
+                          <p className="text-sm text-muted-foreground">{prescription.diagnosis}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-start gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground mt-1" />
-                    <div>
-                      <p className="text-sm font-medium">Duration</p>
-                      <p className="text-sm text-muted-foreground">{prescription.duration}</p>
-                    </div>
-                  </div>
-                  <div className="flex justify-end items-center gap-2">
-                    <Button size="sm" variant="outline">
-                      <FileText className="h-4 w-4 mr-2" />
-                      View Details
-                    </Button>
-                    <Button size="sm" variant="outline">Refill</Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );

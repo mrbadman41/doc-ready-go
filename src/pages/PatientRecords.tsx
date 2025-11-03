@@ -5,23 +5,48 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Search, FileText, Calendar, User } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 
 const PatientRecords = () => {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const [records, setRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const patients = [
-    { id: 1, name: 'John Smith', age: 45, lastVisit: '2024-01-15', condition: 'Hypertension', status: 'Active' },
-    { id: 2, name: 'Sarah Johnson', age: 32, lastVisit: '2024-01-14', condition: 'Diabetes', status: 'Active' },
-    { id: 3, name: 'Michael Brown', age: 56, lastVisit: '2024-01-10', condition: 'Arthritis', status: 'Follow-up' },
-    { id: 4, name: 'Emily Davis', age: 28, lastVisit: '2024-01-08', condition: 'Migraine', status: 'Active' },
-    { id: 5, name: 'David Wilson', age: 41, lastVisit: '2024-01-05', condition: 'Back Pain', status: 'Recovery' },
-    { id: 6, name: 'Lisa Anderson', age: 38, lastVisit: '2024-01-03', condition: 'Anxiety', status: 'Active' },
-  ];
+  useEffect(() => {
+    const fetchRecords = async () => {
+      if (!user?.id) return;
 
-  const filteredPatients = patients.filter(patient =>
-    patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    patient.condition.toLowerCase().includes(searchQuery.toLowerCase())
+      // Get doctor's ID
+      const { data: doctorData } = await supabase
+        .from('doctors')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!doctorData) return;
+
+      // Fetch medical records for this doctor
+      const { data, error } = await supabase
+        .from('medical_records')
+        .select('*, profiles!medical_records_patient_id_fkey(name)')
+        .eq('doctor_id', doctorData.id)
+        .order('record_date', { ascending: false });
+
+      if (!error && data) {
+        setRecords(data);
+      }
+      setLoading(false);
+    };
+
+    fetchRecords();
+  }, [user]);
+
+  const filteredRecords = records.filter(record =>
+    record.profiles?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    record.diagnosis?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -56,49 +81,49 @@ const PatientRecords = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Patient Name</TableHead>
-                  <TableHead>Age</TableHead>
-                  <TableHead>Last Visit</TableHead>
-                  <TableHead>Condition</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredPatients.map((patient) => (
-                  <TableRow key={patient.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        {patient.name}
-                      </div>
-                    </TableCell>
-                    <TableCell>{patient.age}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        {patient.lastVisit}
-                      </div>
-                    </TableCell>
-                    <TableCell>{patient.condition}</TableCell>
-                    <TableCell>
-                      <Badge variant={patient.status === 'Active' ? 'default' : 'secondary'}>
-                        {patient.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button size="sm" variant="ghost">
-                        <FileText className="h-4 w-4 mr-2" />
-                        View Record
-                      </Button>
-                    </TableCell>
+            {loading ? (
+              <p className="text-center py-8 text-muted-foreground">Loading records...</p>
+            ) : filteredRecords.length === 0 ? (
+              <p className="text-center py-8 text-muted-foreground">No patient records found</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Patient Name</TableHead>
+                    <TableHead>Record Date</TableHead>
+                    <TableHead>Diagnosis</TableHead>
+                    <TableHead>Prescription</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredRecords.map((record) => (
+                    <TableRow key={record.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          {record.profiles?.name || 'Unknown'}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          {record.record_date}
+                        </div>
+                      </TableCell>
+                      <TableCell>{record.diagnosis || 'N/A'}</TableCell>
+                      <TableCell>{record.prescription || 'N/A'}</TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm" variant="ghost">
+                          <FileText className="h-4 w-4 mr-2" />
+                          View Record
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </main>

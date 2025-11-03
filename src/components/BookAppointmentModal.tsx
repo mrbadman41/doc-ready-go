@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -36,7 +36,8 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { mockHospitals } from "@/data/mockData";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 const formSchema = z.object({
   hospitalId: z.string().min(1, "Please select a hospital"),
@@ -62,7 +63,11 @@ const timeSlots = [
 ];
 
 export const BookAppointmentModal = ({ open, onOpenChange, preSelectedHospital, preSelectedDoctor }: BookAppointmentModalProps) => {
+  const { user } = useAuth();
   const [selectedHospital, setSelectedHospital] = useState<string>(preSelectedHospital || "");
+  const [hospitals, setHospitals] = useState<any[]>([]);
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -74,15 +79,55 @@ export const BookAppointmentModal = ({ open, onOpenChange, preSelectedHospital, 
     },
   });
 
-  const selectedHospitalData = mockHospitals.find((h) => h.id === selectedHospital);
-  const filteredDoctors = selectedHospitalData?.doctors || [];
+  useEffect(() => {
+    const fetchHospitals = async () => {
+      const { data } = await supabase.from('hospitals').select('*');
+      setHospitals(data || []);
+    };
+    fetchHospitals();
+  }, []);
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    const hospital = mockHospitals.find((h) => h.id === values.hospitalId);
-    const doctor = hospital?.doctors.find((d) => d.id === values.doctorId);
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      if (!selectedHospital) return;
+      const { data } = await supabase
+        .from('doctors')
+        .select('*, profiles!doctors_user_id_fkey(name)')
+        .eq('hospital_id', selectedHospital);
+      setDoctors(data || []);
+    };
+    fetchDoctors();
+  }, [selectedHospital]);
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!user?.id) {
+      toast.error("You must be logged in to book an appointment");
+      return;
+    }
+
+    setLoading(true);
+    
+    const { error } = await supabase.from('appointments').insert({
+      patient_id: user.id,
+      doctor_id: values.doctorId,
+      hospital_id: values.hospitalId,
+      appointment_date: format(values.date, "yyyy-MM-dd"),
+      appointment_time: values.time,
+      notes: values.reason,
+      status: 'scheduled'
+    });
+
+    setLoading(false);
+
+    if (error) {
+      toast.error("Failed to book appointment", {
+        description: error.message
+      });
+      return;
+    }
     
     toast.success("Appointment Booked!", {
-      description: `Your appointment with Dr. ${doctor?.name} at ${hospital?.name} on ${format(values.date, "PPP")} at ${values.time} has been confirmed.`,
+      description: `Your appointment has been scheduled for ${format(values.date, "PPP")} at ${values.time}.`,
     });
     
     form.reset();
@@ -121,7 +166,7 @@ export const BookAppointmentModal = ({ open, onOpenChange, preSelectedHospital, 
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {mockHospitals.map((hospital) => (
+                      {hospitals.map((hospital) => (
                         <SelectItem key={hospital.id} value={hospital.id}>
                           {hospital.name}
                         </SelectItem>
@@ -150,9 +195,9 @@ export const BookAppointmentModal = ({ open, onOpenChange, preSelectedHospital, 
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {filteredDoctors.map((doctor) => (
+                      {doctors.map((doctor) => (
                         <SelectItem key={doctor.id} value={doctor.id}>
-                          Dr. {doctor.name} - {doctor.specialty}
+                          Dr. {doctor.profiles?.name || 'Unknown'} - {doctor.specialty}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -258,11 +303,12 @@ export const BookAppointmentModal = ({ open, onOpenChange, preSelectedHospital, 
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 className="flex-1"
+                disabled={loading}
               >
                 Cancel
               </Button>
-              <Button type="submit" className="flex-1">
-                Book Appointment
+              <Button type="submit" className="flex-1" disabled={loading}>
+                {loading ? 'Booking...' : 'Book Appointment'}
               </Button>
             </div>
           </form>
