@@ -1,13 +1,31 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import HospitalCard from "@/components/HospitalCard";
-import { mockHospitals } from "@/data/mockData";
 import { Search, Clock, Calendar, Users } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 const PatientDashboard = () => {
   const navigate = useNavigate();
-  const featuredHospitals = mockHospitals.slice(0, 3);
+  const { user } = useAuth();
+  const [hospitals, setHospitals] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchHospitals = async () => {
+      const { data, error } = await supabase
+        .from('hospitals')
+        .select('*')
+        .limit(3);
+      
+      if (!error && data) {
+        setHospitals(data);
+      }
+    };
+    
+    fetchHospitals();
+  }, []);
 
   const features = [
     {
@@ -73,9 +91,13 @@ const PatientDashboard = () => {
           </div>
           
           <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-8">
-            {featuredHospitals.map((hospital) => (
-              <HospitalCard key={hospital.id} {...hospital} />
-            ))}
+            {hospitals.length > 0 ? (
+              hospitals.map((hospital) => (
+                <HospitalCard key={hospital.id} {...hospital} doctors={[]} />
+              ))
+            ) : (
+              <p className="col-span-full text-center text-muted-foreground">Loading hospitals...</p>
+            )}
           </div>
           
           <div className="text-center mt-12">
