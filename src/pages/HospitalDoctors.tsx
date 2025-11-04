@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MapPin, Phone, Star, Calendar, Clock, ArrowLeft, Building2 } from "lucide-react";
 import { BookAppointmentModal } from "@/components/BookAppointmentModal";
 import { DoctorProfileModal } from "@/components/DoctorProfileModal";
-import { supabase } from "@/integrations/supabase/client";
+import { mockHospitals } from "@/data/mockData";
 
 const HospitalDoctors = () => {
   const { hospitalId } = useParams();
@@ -22,28 +22,17 @@ const HospitalDoctors = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!hospitalId) return;
+    if (!hospitalId) return;
 
-      // Fetch hospital
-      const { data: hospitalData } = await supabase
-        .from('hospitals')
-        .select('*')
-        .eq('id', hospitalId)
-        .single();
-
-      // Fetch doctors for this hospital
-      const { data: doctorsData } = await supabase
-        .from('doctors')
-        .select('*, profiles!doctors_user_id_fkey(name)')
-        .eq('hospital_id', hospitalId);
-
-      setHospital(hospitalData);
-      setDoctors(doctorsData || []);
-      setLoading(false);
-    };
-
-    fetchData();
+    const foundHospital = mockHospitals.find(h => h.id === hospitalId);
+    if (foundHospital) {
+      setHospital(foundHospital);
+      setDoctors(foundHospital.doctors.map(doc => ({
+        ...doc,
+        profiles: { name: doc.name }
+      })));
+    }
+    setLoading(false);
   }, [hospitalId]);
 
   const handleBookAppointment = (doctorId: string) => {
@@ -147,7 +136,7 @@ const HospitalDoctors = () => {
                   
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Building2 className="h-4 w-4" />
-                    <span>{hospital.beds || 0} beds</span>
+                    <span>{hospital.totalBeds || 0} beds ({hospital.availableBeds || 0} available)</span>
                   </div>
                 </div>
 
@@ -188,8 +177,8 @@ const HospitalDoctors = () => {
                             <p className="text-muted-foreground">{doctor.specialty}</p>
                           </div>
                           
-                          <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
-                            Available
+                          <Badge variant="outline" className={getAvailabilityColor(doctor.availability || 'available')}>
+                            {doctor.availability === 'busy' ? `Busy - Next: ${doctor.nextSlot}` : doctor.availability === 'offline' ? 'Offline' : 'Available'}
                           </Badge>
                         </div>
 

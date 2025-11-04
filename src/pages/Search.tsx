@@ -4,7 +4,7 @@ import { Search, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import HospitalCard from "@/components/HospitalCard";
-import { supabase } from "@/integrations/supabase/client";
+import { mockHospitals } from "@/data/mockData";
 
 const SearchPage = () => {
   const navigate = useNavigate();
@@ -14,25 +14,17 @@ const SearchPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchHospitals = async () => {
-      setLoading(true);
-      let query = supabase
-        .from('hospitals')
-        .select('*');
-
-      if (searchTerm) {
-        query = query.or(`name.ilike.%${searchTerm}%,address.ilike.%${searchTerm}%`);
-      }
-
-      const { data, error } = await query;
-      
-      if (!error && data) {
-        setHospitals(data);
-      }
-      setLoading(false);
-    };
-
-    fetchHospitals();
+    setLoading(true);
+    
+    const filtered = mockHospitals.filter(hospital => {
+      if (!searchTerm) return true;
+      const search = searchTerm.toLowerCase();
+      return hospital.name.toLowerCase().includes(search) || 
+             hospital.address.toLowerCase().includes(search);
+    });
+    
+    setHospitals(filtered);
+    setLoading(false);
   }, [searchTerm]);
 
   return (
@@ -98,7 +90,7 @@ const SearchPage = () => {
         ) : (
           <div className="grid md:grid-cols-2 gap-6">
             {hospitals.map((hospital) => (
-              <HospitalCard key={hospital.id} {...hospital} doctors={[]} />
+              <HospitalCard key={hospital.id} {...hospital} doctors={hospital.doctors} />
             ))}
           </div>
         )}
