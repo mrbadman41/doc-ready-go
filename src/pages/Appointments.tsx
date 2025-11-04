@@ -1,46 +1,25 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, Calendar, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
 import { BookAppointmentModal } from "@/components/BookAppointmentModal";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
+import { mockAppointments } from "@/data/mockData";
 
 const Appointments = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchAppointments = async () => {
-      if (!user?.id) return;
-
-      const { data, error } = await supabase
-        .from('appointments')
-        .select(`
-          *,
-          doctors!appointments_doctor_id_fkey(
-            specialty,
-            profiles!doctors_user_id_fkey(name)
-          ),
-          hospitals(name, address)
-        `)
-        .eq('patient_id', user.id)
-        .order('appointment_date', { ascending: false });
-
-      if (!error && data) {
-        setAppointments(data);
-      }
-      setLoading(false);
-    };
-
-    fetchAppointments();
-  }, [user]);
+    // Load mock appointments
+    setAppointments(mockAppointments);
+    setLoading(false);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -81,7 +60,7 @@ const Appointments = () => {
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
                       <h3 className="font-semibold text-lg">
-                        Dr. {appt.doctors?.profiles?.name || 'Unknown'}
+                        {appt.doctorName}
                       </h3>
                       <Badge variant={
                         appt.status === 'scheduled' ? 'default' : 
@@ -91,12 +70,12 @@ const Appointments = () => {
                         {appt.status}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">{appt.doctors?.specialty}</p>
-                    <p className="text-sm">{appt.hospitals?.name}</p>
-                    <p className="text-sm text-muted-foreground">{appt.hospitals?.address}</p>
+                    <p className="text-sm text-muted-foreground">{appt.specialty}</p>
+                    <p className="text-sm">{appt.hospitalName}</p>
+                    <p className="text-sm text-muted-foreground">{appt.hospitalAddress}</p>
                     <div className="flex gap-4 mt-2">
-                      <span className="text-sm font-medium">📅 {appt.appointment_date}</span>
-                      <span className="text-sm font-medium">🕒 {appt.appointment_time}</span>
+                      <span className="text-sm font-medium">📅 {appt.date}</span>
+                      <span className="text-sm font-medium">🕒 {appt.time}</span>
                     </div>
                     {appt.notes && (
                       <p className="text-sm text-muted-foreground mt-2">Note: {appt.notes}</p>
@@ -105,7 +84,7 @@ const Appointments = () => {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => navigate(`/appointment/${appt.id}`)}
+                    onClick={() => toast.info("Appointment details coming soon!")}
                   >
                     View Details
                   </Button>

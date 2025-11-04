@@ -219,3 +219,43 @@ export const mockSpecialties = [
   "Internal Medicine", "Neurology", "Orthopedics", "Pediatrics", 
   "Gynecology", "Radiology", "Surgery", "Oncology"
 ];
+
+export interface Appointment {
+  id: string;
+  patientName: string;
+  doctorName: string;
+  hospitalName: string;
+  hospitalAddress: string;
+  specialty: string;
+  date: string;
+  time: string;
+  status: "scheduled" | "completed" | "cancelled";
+  notes?: string;
+}
+
+export const mockAppointments: Appointment[] = [
+  {
+    id: "apt1",
+    patientName: "John Banda",
+    doctorName: "Dr. Mwansa Kunda",
+    hospitalName: "University Teaching Hospital (UTH)",
+    hospitalAddress: "Nationalist Road, Ridgeway, Lusaka",
+    specialty: "Cardiology",
+    date: "2025-11-10",
+    time: "09:00 AM",
+    status: "scheduled",
+    notes: "Regular checkup for heart condition"
+  },
+  {
+    id: "apt2",
+    patientName: "John Banda",
+    doctorName: "Dr. Grace Tembo",
+    hospitalName: "Levy Mwanawasa University Teaching Hospital",
+    hospitalAddress: "Levy Junction, Great East Road, Lusaka",
+    specialty: "Pediatrics",
+    date: "2025-11-05",
+    time: "02:00 PM",
+    status: "completed",
+    notes: "Child vaccination appointment"
+  }
+];

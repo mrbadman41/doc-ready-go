@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { mockHospitals } from "@/data/mockData";
 import { useAuth } from "@/context/AuthContext";
 
 const formSchema = z.object({
@@ -80,51 +80,31 @@ export const BookAppointmentModal = ({ open, onOpenChange, preSelectedHospital, 
   });
 
   useEffect(() => {
-    const fetchHospitals = async () => {
-      const { data } = await supabase.from('hospitals').select('*');
-      setHospitals(data || []);
-    };
-    fetchHospitals();
+    setHospitals(mockHospitals);
   }, []);
 
   useEffect(() => {
-    const fetchDoctors = async () => {
-      if (!selectedHospital) return;
-      const { data } = await supabase
-        .from('doctors')
-        .select('*, profiles!doctors_user_id_fkey(name)')
-        .eq('hospital_id', selectedHospital);
-      setDoctors(data || []);
-    };
-    fetchDoctors();
+    if (!selectedHospital) {
+      setDoctors([]);
+      return;
+    }
+    const hospital = mockHospitals.find(h => h.id === selectedHospital);
+    if (hospital) {
+      setDoctors(hospital.doctors.map(doc => ({
+        id: doc.id,
+        specialty: doc.specialty,
+        profiles: { name: doc.name }
+      })));
+    }
   }, [selectedHospital]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!user?.id) {
-      toast.error("You must be logged in to book an appointment");
-      return;
-    }
-
     setLoading(true);
     
-    const { error } = await supabase.from('appointments').insert({
-      patient_id: user.id,
-      doctor_id: values.doctorId,
-      hospital_id: values.hospitalId,
-      appointment_date: format(values.date, "yyyy-MM-dd"),
-      appointment_time: values.time,
-      notes: values.reason,
-      status: 'scheduled'
-    });
-
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
     setLoading(false);
-
-    if (error) {
-      toast.error("Failed to book appointment", {
-        description: error.message
-      });
-      return;
-    }
     
     toast.success("Appointment Booked!", {
       description: `Your appointment has been scheduled for ${format(values.date, "PPP")} at ${values.time}.`,
