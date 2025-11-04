@@ -257,5 +257,42 @@ export const mockAppointments: Appointment[] = [
     time: "02:00 PM",
     status: "completed",
     notes: "Child vaccination appointment"
+  },
+  {
+    id: "apt3",
+    patientName: "Sarah Mwape",
+    doctorName: "Dr. Mwansa Kunda",
+    hospitalName: "University Teaching Hospital (UTH)",
+    hospitalAddress: "Nationalist Road, Ridgeway, Lusaka",
+    specialty: "Cardiology",
+    date: "2025-11-04",
+    time: "10:00 AM",
+    status: "scheduled",
+    notes: "Follow-up consultation"
+  },
+  {
+    id: "apt4",
+    patientName: "David Phiri",
+    doctorName: "Dr. James Phiri",
+    hospitalName: "University Teaching Hospital (UTH)",
+    hospitalAddress: "Nationalist Road, Ridgeway, Lusaka",
+    specialty: "Neurology",
+    date: "2025-11-04",
+    time: "02:30 PM",
+    status: "scheduled",
+    notes: "Migraine assessment"
   }
 ];
+
+export const mockDoctorStats = {
+  todayAppointments: 3,
+  totalPatients: 45,
+  pendingReviews: 8,
+};
+
+export const mockAdminStats = {
+  totalUsers: 234,
+  activeHospitals: 5,
+  totalAppointments: 156,
+  systemHealth: 98,
+};

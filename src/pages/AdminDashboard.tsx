@@ -4,16 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Users, Building2, Calendar, Settings } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { mockAdminStats } from '@/data/mockData';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
   const stats = [
-    { title: 'Total Users', value: '1,234', icon: Users, color: 'text-blue-600' },
-    { title: 'Active Hospitals', value: '45', icon: Building2, color: 'text-green-600' },
-    { title: 'Total Appointments', value: '856', icon: Calendar, color: 'text-purple-600' },
-    { title: 'System Health', value: '98%', icon: Settings, color: 'text-orange-600' },
+    { title: 'Total Users', value: mockAdminStats.totalUsers.toString(), icon: Users, color: 'text-blue-600' },
+    { title: 'Active Hospitals', value: mockAdminStats.activeHospitals.toString(), icon: Building2, color: 'text-green-600' },
+    { title: 'Total Appointments', value: mockAdminStats.totalAppointments.toString(), icon: Calendar, color: 'text-purple-600' },
+    { title: 'System Health', value: `${mockAdminStats.systemHealth}%`, icon: Settings, color: 'text-orange-600' },
   ];
 
   return (
