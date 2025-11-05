@@ -36,8 +36,8 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { mockHospitals } from "@/data/mockData";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
   hospitalId: z.string().min(1, "Please select a hospital"),
@@ -80,7 +80,22 @@ export const BookAppointmentModal = ({ open, onOpenChange, preSelectedHospital, 
   });
 
   useEffect(() => {
-    setHospitals(mockHospitals);
+    const fetchHospitals = async () => {
+      const { data, error } = await supabase
+        .from('hospitals')
+        .select('*')
+        .order('name');
+      
+      if (error) {
+        console.error('Error fetching hospitals:', error);
+        toast.error('Failed to load hospitals');
+        return;
+      }
+      
+      setHospitals(data || []);
+    };
+    
+    fetchHospitals();
   }, []);
 
   useEffect(() => {
@@ -88,30 +103,87 @@ export const BookAppointmentModal = ({ open, onOpenChange, preSelectedHospital, 
       setDoctors([]);
       return;
     }
-    const hospital = mockHospitals.find(h => h.id === selectedHospital);
-    if (hospital) {
-      setDoctors(hospital.doctors.map(doc => ({
-        id: doc.id,
-        specialty: doc.specialty,
-        profiles: { name: doc.name }
-      })));
-    }
+    
+    const fetchDoctors = async () => {
+      const { data, error } = await supabase
+        .from('doctors')
+        .select(`
+          id,
+          specialty,
+          user_id,
+          profiles:user_id (name)
+        `)
+        .eq('hospital_id', selectedHospital);
+      
+      if (error) {
+        console.error('Error fetching doctors:', error);
+        toast.error('Failed to load doctors');
+        return;
+      }
+      
+      setDoctors(data || []);
+    };
+    
+    fetchDoctors();
   }, [selectedHospital]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!user?.id) {
+      toast.error("Please log in to book an appointment");
+      return;
+    }
+    
     setLoading(true);
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    setLoading(false);
-    
-    toast.success("Appointment Booked!", {
-      description: `Your appointment has been scheduled for ${format(values.date, "PPP")} at ${values.time}.`,
-    });
-    
-    form.reset();
-    onOpenChange(false);
+    try {
+      // Convert time to 24-hour format
+      const timeParts = values.time.match(/(\d+):(\d+)\s*(AM|PM)/);
+      if (!timeParts) {
+        toast.error("Invalid time format");
+        setLoading(false);
+        return;
+      }
+      
+      let hours = parseInt(timeParts[1]);
+      const minutes = timeParts[2];
+      const period = timeParts[3];
+      
+      if (period === 'PM' && hours !== 12) hours += 12;
+      if (period === 'AM' && hours === 12) hours = 0;
+      
+      const timeString = `${hours.toString().padStart(2, '0')}:${minutes}:00`;
+      
+      const { error } = await supabase
+        .from('appointments')
+        .insert({
+          patient_id: user.id,
+          doctor_id: values.doctorId,
+          hospital_id: values.hospitalId,
+          appointment_date: format(values.date, 'yyyy-MM-dd'),
+          appointment_time: timeString,
+          notes: values.reason,
+          status: 'scheduled'
+        });
+      
+      if (error) {
+        console.error('Error booking appointment:', error);
+        toast.error("Failed to book appointment");
+        setLoading(false);
+        return;
+      }
+      
+      toast.success("Appointment Booked!", {
+        description: `Your appointment has been scheduled for ${format(values.date, "PPP")} at ${values.time}.`,
+      });
+      
+      form.reset();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error("An error occurred");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

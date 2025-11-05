@@ -1,20 +1,69 @@
+import { useEffect, useState } from 'react';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, Building2, Calendar, Settings } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { mockAdminStats } from '@/data/mockData';
+import { supabase } from '@/integrations/supabase/client';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [activeHospitals, setActiveHospitals] = useState(0);
+  const [totalAppointments, setTotalAppointments] = useState(0);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      // Fetch total users
+      const { count: usersCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+      
+      // Fetch active hospitals
+      const { count: hospitalsCount } = await supabase
+        .from('hospitals')
+        .select('*', { count: 'exact', head: true });
+      
+      // Fetch total appointments
+      const { count: appointmentsCount } = await supabase
+        .from('appointments')
+        .select('*', { count: 'exact', head: true });
+      
+      setTotalUsers(usersCount || 0);
+      setActiveHospitals(hospitalsCount || 0);
+      setTotalAppointments(appointmentsCount || 0);
+    };
+    
+    fetchStats();
+    
+    // Set up real-time subscription for appointments
+    const channel = supabase
+      .channel('admin-stats')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments'
+        },
+        () => {
+          fetchStats();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const stats = [
-    { title: 'Total Users', value: mockAdminStats.totalUsers.toString(), icon: Users, color: 'text-blue-600' },
-    { title: 'Active Hospitals', value: mockAdminStats.activeHospitals.toString(), icon: Building2, color: 'text-green-600' },
-    { title: 'Total Appointments', value: mockAdminStats.totalAppointments.toString(), icon: Calendar, color: 'text-purple-600' },
-    { title: 'System Health', value: `${mockAdminStats.systemHealth}%`, icon: Settings, color: 'text-orange-600' },
+    { title: 'Total Users', value: totalUsers.toString(), icon: Users, color: 'text-blue-600' },
+    { title: 'Active Hospitals', value: activeHospitals.toString(), icon: Building2, color: 'text-green-600' },
+    { title: 'Total Appointments', value: totalAppointments.toString(), icon: Calendar, color: 'text-purple-600' },
+    { title: 'System Health', value: '100%', icon: Settings, color: 'text-orange-600' },
   ];
 
   return (

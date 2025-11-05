@@ -1,26 +1,96 @@
+import { useEffect, useState } from 'react';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Users, Clock, Activity } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { mockAppointments, mockDoctorStats } from '@/data/mockData';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
 
 const DoctorDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [todayCount, setTodayCount] = useState(0);
+  const [totalPatients, setTotalPatients] = useState(0);
+  const [loading, setLoading] = useState(true);
   
-  // Use mock data for today's appointments
-  const todayDate = new Date().toISOString().split('T')[0];
-  const todayAppointments = mockAppointments.filter(apt => apt.date === todayDate);
-  const stats = mockDoctorStats;
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    const fetchAppointments = async () => {
+      // First get the doctor record for the current user
+      const { data: doctorData, error: doctorError } = await supabase
+        .from('doctors')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (doctorError || !doctorData) {
+        console.error('Error fetching doctor:', doctorError);
+        setLoading(false);
+        return;
+      }
+      
+      // Fetch today's appointments
+      const todayDate = format(new Date(), 'yyyy-MM-dd');
+      const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          profiles:patient_id (name),
+          hospitals (name)
+        `)
+        .eq('doctor_id', doctorData.id)
+        .eq('appointment_date', todayDate)
+        .order('appointment_time');
+      
+      if (error) {
+        console.error('Error fetching appointments:', error);
+        setLoading(false);
+        return;
+      }
+      
+      setAppointments(data || []);
+      setTodayCount(data?.length || 0);
+      
+      // Get unique patient count
+      const uniquePatients = new Set(data?.map(apt => apt.patient_id) || []);
+      setTotalPatients(uniquePatients.size);
+      
+      setLoading(false);
+    };
+    
+    fetchAppointments();
+    
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('doctor-appointments')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments'
+        },
+        () => {
+          fetchAppointments();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   const statsDisplay = [
-    { title: 'Today\'s Appointments', value: stats.todayAppointments.toString(), icon: Calendar, color: 'text-blue-600' },
-    { title: 'Total Patients', value: stats.totalPatients.toString(), icon: Users, color: 'text-green-600' },
-    { title: 'Pending Reviews', value: stats.pendingReviews.toString(), icon: Clock, color: 'text-orange-600' },
-    { title: 'Consultations', value: stats.todayAppointments.toString(), icon: Activity, color: 'text-purple-600' },
+    { title: 'Today\'s Appointments', value: todayCount.toString(), icon: Calendar, color: 'text-blue-600' },
+    { title: 'Total Patients', value: totalPatients.toString(), icon: Users, color: 'text-green-600' },
+    { title: 'Pending Reviews', value: '0', icon: Clock, color: 'text-orange-600' },
+    { title: 'Consultations', value: todayCount.toString(), icon: Activity, color: 'text-purple-600' },
   ];
 
   return (
@@ -57,14 +127,19 @@ const DoctorDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {todayAppointments.length > 0 ? (
-                  todayAppointments.slice(0, 3).map((appt) => (
+                {loading ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">Loading...</p>
+                ) : appointments.length > 0 ? (
+                  appointments.slice(0, 3).map((appt) => (
                     <div key={appt.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
-                        <p className="font-medium">{appt.patientName}</p>
+                        <p className="font-medium">{appt.profiles?.name || 'Unknown Patient'}</p>
                         <p className="text-sm text-muted-foreground">
-                          {appt.time}
+                          {appt.appointment_time}
                         </p>
+                        {appt.notes && (
+                          <p className="text-xs text-muted-foreground mt-1">{appt.notes}</p>
+                        )}
                       </div>
                       <Button size="sm" onClick={() => toast.info("Appointment details coming soon!")}>View Details</Button>
                     </div>

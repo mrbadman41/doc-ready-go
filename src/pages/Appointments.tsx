@@ -7,19 +7,73 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
 import { BookAppointmentModal } from "@/components/BookAppointmentModal";
-import { mockAppointments } from "@/data/mockData";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { format } from "date-fns";
 
 const Appointments = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load mock appointments
-    setAppointments(mockAppointments);
-    setLoading(false);
-  }, []);
+    if (!user?.id) return;
+    
+    const fetchAppointments = async () => {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          doctors (
+            specialty,
+            user_id,
+            profiles:user_id (name)
+          ),
+          hospitals (
+            name,
+            address
+          )
+        `)
+        .eq('patient_id', user.id)
+        .order('appointment_date', { ascending: false })
+        .order('appointment_time', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching appointments:', error);
+        toast.error('Failed to load appointments');
+        setLoading(false);
+        return;
+      }
+      
+      setAppointments(data || []);
+      setLoading(false);
+    };
+    
+    fetchAppointments();
+    
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('patient-appointments')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments',
+          filter: `patient_id=eq.${user.id}`
+        },
+        () => {
+          fetchAppointments();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -60,7 +114,7 @@ const Appointments = () => {
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
                       <h3 className="font-semibold text-lg">
-                        {appt.doctorName}
+                        Dr. {appt.doctors?.profiles?.name || 'Unknown'}
                       </h3>
                       <Badge variant={
                         appt.status === 'scheduled' ? 'default' : 
@@ -70,12 +124,12 @@ const Appointments = () => {
                         {appt.status}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">{appt.specialty}</p>
-                    <p className="text-sm">{appt.hospitalName}</p>
-                    <p className="text-sm text-muted-foreground">{appt.hospitalAddress}</p>
+                    <p className="text-sm text-muted-foreground">{appt.doctors?.specialty}</p>
+                    <p className="text-sm">{appt.hospitals?.name}</p>
+                    <p className="text-sm text-muted-foreground">{appt.hospitals?.address}</p>
                     <div className="flex gap-4 mt-2">
-                      <span className="text-sm font-medium">📅 {appt.date}</span>
-                      <span className="text-sm font-medium">🕒 {appt.time}</span>
+                      <span className="text-sm font-medium">📅 {format(new Date(appt.appointment_date), 'PPP')}</span>
+                      <span className="text-sm font-medium">🕒 {appt.appointment_time}</span>
                     </div>
                     {appt.notes && (
                       <p className="text-sm text-muted-foreground mt-2">Note: {appt.notes}</p>
