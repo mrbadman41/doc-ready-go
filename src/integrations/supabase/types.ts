@@ -272,24 +272,45 @@ export type Database = {
       }
       profiles: {
         Row: {
+          allergies: string | null
+          avatar_url: string | null
+          blood_type: string | null
           created_at: string | null
           email: string
+          emergency_contact: string | null
           id: string
+          insurance: string | null
+          location: string | null
           name: string | null
+          phone: string | null
           updated_at: string | null
         }
         Insert: {
+          allergies?: string | null
+          avatar_url?: string | null
+          blood_type?: string | null
           created_at?: string | null
           email: string
+          emergency_contact?: string | null
           id: string
+          insurance?: string | null
+          location?: string | null
           name?: string | null
+          phone?: string | null
           updated_at?: string | null
         }
         Update: {
+          allergies?: string | null
+          avatar_url?: string | null
+          blood_type?: string | null
           created_at?: string | null
           email?: string
+          emergency_contact?: string | null
           id?: string
+          insurance?: string | null
+          location?: string | null
           name?: string | null
+          phone?: string | null
           updated_at?: string | null
         }
         Relationships: []

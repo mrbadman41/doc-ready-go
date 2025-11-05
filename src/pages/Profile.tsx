@@ -4,19 +4,61 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Navigation from "@/components/Navigation";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 const Profile = () => {
   const navigate = useNavigate();
-
-  // Mock user data - in a real app, this would come from authentication/database
-  const user = {
-    name: "John Doe",
-    email: "john.doe@email.com",
-    phone: "+260 97 123 4567",
-    location: "Lusaka, Zambia",
-    memberSince: "January 2024",
+  const { user: authUser } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    location: "",
+    bloodType: "",
+    allergies: "",
+    emergencyContact: "",
+    insurance: "",
     avatar: "",
-  };
+  });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!authUser) return;
+
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", authUser.id)
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          setProfile({
+            name: data.name || "",
+            email: data.email || "",
+            phone: data.phone || "",
+            location: data.location || "",
+            bloodType: data.blood_type || "",
+            allergies: data.allergies || "",
+            emergencyContact: data.emergency_contact || "",
+            insurance: data.insurance || "",
+            avatar: data.avatar_url || "",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [authUser]);
 
   const stats = {
     totalAppointments: 24,
@@ -25,12 +67,16 @@ const Profile = () => {
     favoriteHospital: "City General",
   };
 
-  const medicalInfo = {
-    bloodType: "O+",
-    allergies: "Penicillin",
-    emergencyContact: "Jane Doe - +260 96 987 6543",
-    insurance: "HealthCare Plus",
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -50,34 +96,38 @@ const Profile = () => {
         <Card className="p-6 mb-6">
           <div className="flex items-start gap-6">
             <Avatar className="w-24 h-24">
-              <AvatarImage src={user.avatar} alt={user.name} />
+              <AvatarImage src={profile.avatar} alt={profile.name} />
               <AvatarFallback className="text-2xl bg-primary/10 text-primary">
-                {user.name.split(' ').map(n => n[0]).join('')}
+                {profile.name ? profile.name.split(' ').map(n => n[0]).join('') : 'U'}
               </AvatarFallback>
             </Avatar>
             
             <div className="flex-1 space-y-3">
-              <h2 className="text-2xl font-bold">{user.name}</h2>
+              <h2 className="text-2xl font-bold">{profile.name || 'User'}</h2>
               
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Mail className="h-4 w-4 text-blue-500" />
-                  <span>{user.email}</span>
+                  <span>{profile.email || 'No email'}</span>
                 </div>
                 
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Phone className="h-4 w-4 text-green-500" />
-                  <span>{user.phone}</span>
-                </div>
+                {profile.phone && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Phone className="h-4 w-4 text-green-500" />
+                    <span>{profile.phone}</span>
+                  </div>
+                )}
                 
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="h-4 w-4 text-red-500" />
-                  <span>{user.location}</span>
-                </div>
+                {profile.location && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="h-4 w-4 text-red-500" />
+                    <span>{profile.location}</span>
+                  </div>
+                )}
                 
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Calendar className="h-4 w-4 text-purple-500" />
-                  <span>Patient since {user.memberSince}</span>
+                  <span>Patient since {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
                 </div>
               </div>
             </div>
@@ -120,22 +170,22 @@ const Profile = () => {
             <div className="space-y-4">
               <div>
                 <span className="text-muted-foreground block mb-1">Blood Type:</span>
-                <span className="font-semibold">{medicalInfo.bloodType}</span>
+                <span className="font-semibold">{profile.bloodType || 'Not specified'}</span>
               </div>
               
               <div>
                 <span className="text-muted-foreground block mb-1">Allergies:</span>
-                <span className="font-semibold">{medicalInfo.allergies}</span>
+                <span className="font-semibold">{profile.allergies || 'None'}</span>
               </div>
               
               <div>
                 <span className="text-muted-foreground block mb-1">Emergency Contact:</span>
-                <span className="font-semibold">{medicalInfo.emergencyContact}</span>
+                <span className="font-semibold">{profile.emergencyContact || 'Not specified'}</span>
               </div>
               
               <div>
                 <span className="text-muted-foreground block mb-1">Insurance:</span>
-                <span className="font-semibold">{medicalInfo.insurance}</span>
+                <span className="font-semibold">{profile.insurance || 'Not specified'}</span>
               </div>
             </div>
           </Card>
