@@ -28,9 +28,12 @@ const signupSchema = z.object({
 const doctorSignupSchema = signupSchema.extend({
   specialty: z.string().min(2, "Specialty is required"),
   bio: z.string().optional(),
-  consultation_fee: z.string().min(1, "Consultation fee is required"),
   experience: z.string().min(1, "Experience is required"),
   hospital_id: z.string().min(1, "Please select a hospital"),
+  phone: z.string().min(10, "Phone number is required"),
+  license_number: z.string().min(1, "Medical license number is required"),
+  qualifications: z.string().min(2, "Qualifications are required"),
+  languages_spoken: z.string().optional(),
 });
 
 const Login = () => {
@@ -50,16 +53,23 @@ const Login = () => {
   // Doctor-specific fields
   const [specialty, setSpecialty] = useState("");
   const [bio, setBio] = useState("");
-  const [consultationFee, setConsultationFee] = useState("");
   const [experience, setExperience] = useState("");
   const [hospitalId, setHospitalId] = useState("");
+  const [phone, setPhone] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState("");
+  const [qualifications, setQualifications] = useState("");
+  const [languagesSpoken, setLanguagesSpoken] = useState("");
   const [hospitals, setHospitals] = useState<any[]>([]);
   
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchHospitals = async () => {
-      const { data } = await supabase.from('hospitals').select('id, name').order('name');
+      const { data } = await supabase
+        .from('hospitals')
+        .select('id, name, address')
+        .ilike('address', '%Lusaka%')
+        .order('name');
       setHospitals(data || []);
     };
     fetchHospitals();
@@ -115,9 +125,12 @@ const Login = () => {
           role: signupRole,
           specialty,
           bio,
-          consultation_fee: consultationFee,
           experience,
-          hospital_id: hospitalId
+          hospital_id: hospitalId,
+          phone,
+          license_number: licenseNumber,
+          qualifications,
+          languages_spoken: languagesSpoken
         });
       } else {
         signupSchema.parse({ 
@@ -138,9 +151,12 @@ const Login = () => {
     const doctorData = signupRole === 'doctor' ? {
       specialty,
       bio,
-      consultation_fee: parseFloat(consultationFee),
       experience: parseInt(experience),
-      hospital_id: hospitalId
+      hospital_id: hospitalId,
+      phone,
+      license_number: licenseNumber,
+      qualifications,
+      languages_spoken: languagesSpoken
     } : undefined;
     
     const { error } = await signup(signupEmail, signupPassword, signupName, signupRole, doctorData);
@@ -285,10 +301,10 @@ const Login = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="hospital">Hospital</Label>
+                      <Label htmlFor="hospital">Hospital (Lusaka, Zambia)</Label>
                       <Select value={hospitalId} onValueChange={setHospitalId} required>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a hospital" />
+                          <SelectValue placeholder="Select a hospital in Lusaka" />
                         </SelectTrigger>
                         <SelectContent>
                           {hospitals.map((hospital) => (
@@ -298,6 +314,39 @@ const Login = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="+260 XXX XXX XXX"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="license_number">Medical License Number</Label>
+                      <Input
+                        id="license_number"
+                        type="text"
+                        placeholder="Your medical license number"
+                        value={licenseNumber}
+                        onChange={(e) => setLicenseNumber(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="qualifications">Qualifications</Label>
+                      <Input
+                        id="qualifications"
+                        type="text"
+                        placeholder="e.g., MBBS, MD, Fellowship"
+                        value={qualifications}
+                        onChange={(e) => setQualifications(e.target.value)}
+                        required
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="experience">Years of Experience</Label>
@@ -312,16 +361,13 @@ const Login = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="consultation_fee">Consultation Fee (ZMW)</Label>
+                      <Label htmlFor="languages_spoken">Languages Spoken (Optional)</Label>
                       <Input
-                        id="consultation_fee"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="200.00"
-                        value={consultationFee}
-                        onChange={(e) => setConsultationFee(e.target.value)}
-                        required
+                        id="languages_spoken"
+                        type="text"
+                        placeholder="e.g., English, Bemba, Nyanja"
+                        value={languagesSpoken}
+                        onChange={(e) => setLanguagesSpoken(e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">

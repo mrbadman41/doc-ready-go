@@ -14,9 +14,12 @@ interface AuthUser {
 interface DoctorData {
   specialty: string;
   bio?: string;
-  consultation_fee: number;
   experience: number;
   hospital_id: string;
+  phone: string;
+  license_number: string;
+  qualifications: string;
+  languages_spoken?: string;
 }
 
 interface AuthContextType {
@@ -124,9 +127,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             user_id: data.user.id,
             specialty: doctorData.specialty,
             bio: doctorData.bio,
-            consultation_fee: doctorData.consultation_fee,
             experience: doctorData.experience,
-            hospital_id: doctorData.hospital_id
+            hospital_id: doctorData.hospital_id,
+            phone: doctorData.phone,
+            license_number: doctorData.license_number,
+            qualifications: doctorData.qualifications,
+            languages_spoken: doctorData.languages_spoken
           });
 
         if (doctorError) {
