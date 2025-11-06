@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Building2, Calendar, Settings } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Users, Building2, Calendar, Settings, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +17,8 @@ const AdminDashboard = () => {
   const [totalUsers, setTotalUsers] = useState(0);
   const [activeHospitals, setActiveHospitals] = useState(0);
   const [totalAppointments, setTotalAppointments] = useState(0);
+  const [recentAppointments, setRecentAppointments] = useState<any[]>([]);
+  const [deleteAppointmentId, setDeleteAppointmentId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -31,9 +37,25 @@ const AdminDashboard = () => {
         .from('appointments')
         .select('*', { count: 'exact', head: true });
       
+      // Fetch recent appointments
+      const { data: appointments } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          profiles:patient_id (name),
+          doctors (
+            profiles:user_id (name),
+            specialty
+          ),
+          hospitals (name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
       setTotalUsers(usersCount || 0);
       setActiveHospitals(hospitalsCount || 0);
       setTotalAppointments(appointmentsCount || 0);
+      setRecentAppointments(appointments || []);
     };
     
     fetchStats();
@@ -58,6 +80,24 @@ const AdminDashboard = () => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  const handleDeleteAppointment = async () => {
+    if (!deleteAppointmentId) return;
+
+    const { error } = await supabase
+      .from('appointments')
+      .delete()
+      .eq('id', deleteAppointmentId);
+
+    if (error) {
+      toast.error('Failed to delete appointment');
+    } else {
+      toast.success('Appointment deleted successfully');
+      setRecentAppointments(prev => prev.filter(a => a.id !== deleteAppointmentId));
+      setTotalAppointments(prev => prev - 1);
+    }
+    setDeleteAppointmentId(null);
+  };
 
   const stats = [
     { title: 'Total Users', value: totalUsers.toString(), icon: Users, color: 'text-blue-600' },
@@ -92,7 +132,7 @@ const AdminDashboard = () => {
           ))}
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
           <Card>
             <CardHeader>
               <CardTitle>User Management</CardTitle>
@@ -131,7 +171,69 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Appointments</CardTitle>
+            <CardDescription>Latest appointments in the system</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Patient</TableHead>
+                  <TableHead>Doctor</TableHead>
+                  <TableHead>Hospital</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentAppointments.map((appointment) => (
+                  <TableRow key={appointment.id}>
+                    <TableCell>{appointment.profiles?.name || 'N/A'}</TableCell>
+                    <TableCell>Dr. {appointment.doctors?.profiles?.name || 'N/A'}</TableCell>
+                    <TableCell>{appointment.hospitals?.name || 'N/A'}</TableCell>
+                    <TableCell>{appointment.appointment_date}</TableCell>
+                    <TableCell>{appointment.appointment_time}</TableCell>
+                    <TableCell>
+                      <Badge variant={appointment.status === 'completed' ? 'default' : 'secondary'}>
+                        {appointment.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setDeleteAppointmentId(appointment.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </main>
+
+      <AlertDialog open={!!deleteAppointmentId} onOpenChange={() => setDeleteAppointmentId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the appointment.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteAppointment}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -11,11 +11,19 @@ interface AuthUser {
   name: string;
 }
 
+interface DoctorData {
+  specialty: string;
+  bio?: string;
+  consultation_fee: number;
+  experience: number;
+  hospital_id: string;
+}
+
 interface AuthContextType {
   user: AuthUser | null;
   session: Session | null;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
-  signup: (email: string, password: string, name: string, role: UserRole) => Promise<{ error: string | null }>;
+  signup: (email: string, password: string, name: string, role: UserRole, doctorData?: DoctorData) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   loading: boolean;
@@ -84,7 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signup = async (email: string, password: string, name: string, role: UserRole) => {
+  const signup = async (email: string, password: string, name: string, role: UserRole, doctorData?: DoctorData) => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -106,6 +114,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (roleError) {
         console.error('Error setting user role:', roleError);
         return { error: 'Failed to set user role' };
+      }
+
+      // If doctor, create doctor record
+      if (role === 'doctor' && doctorData) {
+        const { error: doctorError } = await supabase
+          .from('doctors')
+          .insert({
+            user_id: data.user.id,
+            specialty: doctorData.specialty,
+            bio: doctorData.bio,
+            consultation_fee: doctorData.consultation_fee,
+            experience: doctorData.experience,
+            hospital_id: doctorData.hospital_id
+          });
+
+        if (doctorError) {
+          console.error('Error creating doctor profile:', doctorError);
+          return { error: 'Failed to create doctor profile' };
+        }
       }
 
       return { error: null };

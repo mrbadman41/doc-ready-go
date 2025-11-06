@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, UserRole } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -20,6 +23,14 @@ const signupSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.enum(['patient', 'doctor', 'admin']),
+});
+
+const doctorSignupSchema = signupSchema.extend({
+  specialty: z.string().min(2, "Specialty is required"),
+  bio: z.string().optional(),
+  consultation_fee: z.string().min(1, "Consultation fee is required"),
+  experience: z.string().min(1, "Experience is required"),
+  hospital_id: z.string().min(1, "Please select a hospital"),
 });
 
 const Login = () => {
@@ -36,7 +47,23 @@ const Login = () => {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupRole, setSignupRole] = useState<UserRole>("patient");
   
+  // Doctor-specific fields
+  const [specialty, setSpecialty] = useState("");
+  const [bio, setBio] = useState("");
+  const [consultationFee, setConsultationFee] = useState("");
+  const [experience, setExperience] = useState("");
+  const [hospitalId, setHospitalId] = useState("");
+  const [hospitals, setHospitals] = useState<any[]>([]);
+  
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchHospitals = async () => {
+      const { data } = await supabase.from('hospitals').select('id, name').order('name');
+      setHospitals(data || []);
+    };
+    fetchHospitals();
+  }, []);
 
   // Redirect if already logged in
   if (!loading && user) {
@@ -80,12 +107,26 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      signupSchema.parse({ 
-        name: signupName, 
-        email: signupEmail, 
-        password: signupPassword, 
-        role: signupRole 
-      });
+      if (signupRole === 'doctor') {
+        doctorSignupSchema.parse({ 
+          name: signupName, 
+          email: signupEmail, 
+          password: signupPassword, 
+          role: signupRole,
+          specialty,
+          bio,
+          consultation_fee: consultationFee,
+          experience,
+          hospital_id: hospitalId
+        });
+      } else {
+        signupSchema.parse({ 
+          name: signupName, 
+          email: signupEmail, 
+          password: signupPassword, 
+          role: signupRole 
+        });
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
@@ -94,7 +135,15 @@ const Login = () => {
     }
 
     setIsLoading(true);
-    const { error } = await signup(signupEmail, signupPassword, signupName, signupRole);
+    const doctorData = signupRole === 'doctor' ? {
+      specialty,
+      bio,
+      consultation_fee: parseFloat(consultationFee),
+      experience: parseInt(experience),
+      hospital_id: hospitalId
+    } : undefined;
+    
+    const { error } = await signup(signupEmail, signupPassword, signupName, signupRole, doctorData);
     setIsLoading(false);
     
     if (error) {
@@ -221,6 +270,73 @@ const Login = () => {
                     </div>
                   </RadioGroup>
                 </div>
+                
+                {signupRole === 'doctor' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="specialty">Specialty</Label>
+                      <Input
+                        id="specialty"
+                        type="text"
+                        placeholder="e.g., Cardiology"
+                        value={specialty}
+                        onChange={(e) => setSpecialty(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="hospital">Hospital</Label>
+                      <Select value={hospitalId} onValueChange={setHospitalId} required>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a hospital" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {hospitals.map((hospital) => (
+                            <SelectItem key={hospital.id} value={hospital.id}>
+                              {hospital.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="experience">Years of Experience</Label>
+                      <Input
+                        id="experience"
+                        type="number"
+                        min="0"
+                        placeholder="5"
+                        value={experience}
+                        onChange={(e) => setExperience(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="consultation_fee">Consultation Fee (ZMW)</Label>
+                      <Input
+                        id="consultation_fee"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="200.00"
+                        value={consultationFee}
+                        onChange={(e) => setConsultationFee(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="bio">Bio (Optional)</Label>
+                      <Textarea
+                        id="bio"
+                        placeholder="Brief description about yourself..."
+                        value={bio}
+                        onChange={(e) => setBio(e.target.value)}
+                        rows={3}
+                      />
+                    </div>
+                  </>
+                )}
+                
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Creating Account..." : "Create Account"}
                 </Button>

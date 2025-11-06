@@ -1,26 +1,56 @@
+import { useEffect, useState } from 'react';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Edit, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { Search, Trash2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const AdminUsers = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
 
-  const users = [
-    { id: 1, name: 'John Doe', email: 'john@example.com', role: 'patient', status: 'active', joinDate: '2024-01-15' },
-    { id: 2, name: 'Dr. Sarah Smith', email: 'sarah@example.com', role: 'doctor', status: 'active', joinDate: '2024-01-10' },
-    { id: 3, name: 'Admin User', email: 'admin@example.com', role: 'admin', status: 'active', joinDate: '2024-01-01' },
-    { id: 4, name: 'Jane Wilson', email: 'jane@example.com', role: 'patient', status: 'active', joinDate: '2024-02-20' },
-    { id: 5, name: 'Dr. Mike Johnson', email: 'mike@example.com', role: 'doctor', status: 'active', joinDate: '2024-01-25' },
-  ];
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select(`
+        *,
+        user_roles (role)
+      `)
+      .order('created_at', { ascending: false });
+
+    setUsers(profiles || []);
+    setLoading(false);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deleteUserId) return;
+
+    // Delete user profile (auth user will cascade delete)
+    const { error } = await supabase.auth.admin.deleteUser(deleteUserId);
+
+    if (error) {
+      toast.error('Failed to delete user. Admin privileges required.');
+    } else {
+      toast.success('User deleted successfully');
+      fetchUsers();
+    }
+    setDeleteUserId(null);
+  };
 
   const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getRoleBadgeVariant = (role: string) => {
@@ -30,6 +60,17 @@ const AdminUsers = () => {
       default: return 'secondary';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="flex items-center justify-center h-96">
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -57,7 +98,6 @@ const AdminUsers = () => {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead>Join Date</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -65,22 +105,20 @@ const AdminUsers = () => {
               <TableBody>
                 {filteredUsers.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
+                    <TableCell className="font-medium">{user.name || 'N/A'}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
-                      <Badge variant={getRoleBadgeVariant(user.role)}>
-                        {user.role}
+                      <Badge variant={getRoleBadgeVariant(user.user_roles?.[0]?.role)}>
+                        {user.user_roles?.[0]?.role || 'patient'}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{user.status}</Badge>
-                    </TableCell>
-                    <TableCell>{user.joinDate}</TableCell>
+                    <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" className="mr-2">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setDeleteUserId(user.id)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -91,6 +129,21 @@ const AdminUsers = () => {
           </CardContent>
         </Card>
       </main>
+
+      <AlertDialog open={!!deleteUserId} onOpenChange={() => setDeleteUserId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the user account and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteUser}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
