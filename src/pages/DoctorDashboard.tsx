@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users, Clock, Activity } from 'lucide-react';
+import { Calendar, Users, Clock, Activity, User } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -168,6 +168,10 @@ const DoctorDashboard = () => {
               <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/doctor/prescriptions')}>
                 <Clock className="mr-2 h-4 w-4" />
                 Prescription History
+              </Button>
+              <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/doctor/profile')}>
+                <User className="mr-2 h-4 w-4" />
+                My Profile
               </Button>
             </CardContent>
           </Card>

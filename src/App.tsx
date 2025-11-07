@@ -22,6 +22,7 @@ import Search from "./pages/Search";
 import Appointments from "./pages/Appointments";
 import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
+import DoctorProfile from "./pages/DoctorProfile";
 import HospitalDoctors from "./pages/HospitalDoctors";
 import NotFound from "./pages/NotFound";
 
@@ -93,6 +94,11 @@ const App = () => (
             <Route path="/doctor/appointment/:id" element={
               <ProtectedRoute allowedRoles={['doctor']}>
                 <AppointmentDetails />
+              </ProtectedRoute>
+            } />
+            <Route path="/doctor/profile" element={
+              <ProtectedRoute allowedRoles={['doctor']}>
+                <DoctorProfile />
               </ProtectedRoute>
             } />
             
