@@ -121,6 +121,10 @@ export type Database = {
           experience: number | null
           hospital_id: string | null
           id: string
+          languages_spoken: string | null
+          license_number: string | null
+          phone: string | null
+          qualifications: string | null
           rating: number | null
           specialty: string
           updated_at: string | null
@@ -133,6 +137,10 @@ export type Database = {
           experience?: number | null
           hospital_id?: string | null
           id?: string
+          languages_spoken?: string | null
+          license_number?: string | null
+          phone?: string | null
+          qualifications?: string | null
           rating?: number | null
           specialty: string
           updated_at?: string | null
@@ -145,6 +153,10 @@ export type Database = {
           experience?: number | null
           hospital_id?: string | null
           id?: string
+          languages_spoken?: string | null
+          license_number?: string | null
+          phone?: string | null
+          qualifications?: string | null
           rating?: number | null
           specialty?: string
           updated_at?: string | null
